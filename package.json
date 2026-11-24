@@ -1,0 +1,47 @@
+{
+  "name": "terminus",
+  "version": "0.1.0",
+  "description": "Desktop orchestration GUI for Claude Code sessions and subagents",
+  "license": "MIT",
+  "main": "dist/main/main/index.js",
+  "private": true,
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build:node": "tsc -p tsconfig.node.json",
+    "build:renderer": "vite build",
+    "build": "npm run build:node && npm run build:renderer",
+    "start": "node scripts/start.mjs",
+    "app": "npm run build && npm start",
+    "core": "node dist/main/core/index.js",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.web.json --noEmit",
+    "win:install": "npm run build && node scripts/win-install.mjs",
+    "win": "node scripts/win-install.mjs --launch",
+    "bootstrap": "bash scripts/bootstrap.sh"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0",
+    "ws": "^8.23.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/xterm": "^6.0.0",
+    "dockview": "^8.9.1",
+    "dockview-react": "^8.9.1",
+    "electron": "^41.7.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}

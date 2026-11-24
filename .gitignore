@@ -1,0 +1,22 @@
+# dependencies and build output
+node_modules/
+dist/
+
+# logs and temp files
+*.log
+*.tmp
+*.terminus-tmp
+*.tsbuildinfo
+
+# local Terminus state, if TERMINUS_HOME is ever pointed inside the repo
+.terminus/
+
+# secrets and local env
+.env
+.env.*
+
+# editor / OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
