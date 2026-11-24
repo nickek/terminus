@@ -16,6 +16,7 @@ declare global {
       pickDirectory(defaultPath?: string): Promise<string | undefined>;
       attention(): void;
       openExternal(url: string): void;
+      clipboard?: { readText(): Promise<string>; writeText(text: string): Promise<void> };
       onCoreExit(cb: (code: number) => void): void;
       window: {
         minimize(): void;

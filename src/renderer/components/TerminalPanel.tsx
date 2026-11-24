@@ -77,20 +77,53 @@ export function TerminalPanel(props: IDockviewPanelProps<{ sessionId: string }>)
     const input = term.onData((data) => client.send({ t: 'input', id: sessionId, data }));
     const binput = term.onBinary((data) => client.send({ t: 'input', id: sessionId, data }));
 
-    // Ctrl+Shift+C / Ctrl+Shift+V copy/paste; plain Ctrl+C still goes to the process.
+    // Copy/paste like Windows Terminal: Ctrl+C copies when text is selected (and clears the
+    // selection); with nothing selected it goes to the process as an interrupt. Ctrl+V pastes
+    // (xterm.js would otherwise send a literal ^V). Ctrl+Shift+C / Ctrl+Shift+V always copy/paste.
+    // Use Electron's clipboard via the preload bridge; navigator.clipboard is the fallback.
+    const writeClipboard = (text: string) =>
+      (window.terminus?.clipboard?.writeText(text) ?? navigator.clipboard.writeText(text)).catch((err) =>
+        console.warn('copy failed', err),
+      );
+    const readClipboard = () =>
+      (window.terminus?.clipboard?.readText() ?? navigator.clipboard.readText()).catch((err) => {
+        console.warn('paste failed', err);
+        return '';
+      });
+    /** The terminal's selection, or a native browser text selection inside this terminal. */
+    const currentSelection = () => {
+      if (term.hasSelection()) return term.getSelection();
+      const native = window.getSelection();
+      if (native && !native.isCollapsed && native.anchorNode && host.contains(native.anchorNode)) return native.toString();
+      return '';
+    };
+    const clearSelections = () => {
+      term.clearSelection();
+      const native = window.getSelection();
+      if (native?.anchorNode && host.contains(native.anchorNode)) native.removeAllRanges();
+    };
+    // No text on the clipboard: pass a real ^V through, so Claude Code can paste an image.
+    const pasteClipboard = () =>
+      readClipboard().then((t) => (t ? term.paste(t) : client.send({ t: 'input', id: sessionId, data: '\x16' })));
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== 'keydown') return true;
-      if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit0' || e.code === 'Numpad0')) {
+      const ctrlOnly = e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey;
+      const ctrlShift = e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey;
+      if (ctrlOnly && (e.code === 'Digit0' || e.code === 'Numpad0')) {
         setZoom(DEFAULT_FONT_SIZE);
         return false;
       }
-      if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') {
-        const sel = term.getSelection();
-        if (sel) navigator.clipboard.writeText(sel);
+      if ((ctrlOnly || ctrlShift) && e.code === 'KeyC') {
+        const sel = currentSelection();
+        if (!sel) return ctrlOnly; // plain Ctrl+C with nothing selected: interrupt
+        writeClipboard(sel);
+        if (ctrlOnly) clearSelections();
+        e.preventDefault();
         return false;
       }
-      if (e.ctrlKey && e.shiftKey && e.code === 'KeyV') {
-        navigator.clipboard.readText().then((t) => t && term.paste(t));
+      if ((ctrlOnly || ctrlShift) && e.code === 'KeyV') {
+        e.preventDefault(); // stop the browser's own paste so text isn't inserted twice
+        pasteClipboard();
         return false;
       }
       return true;

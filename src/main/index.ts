@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
 import { execFile, spawn, type ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import * as http from 'http';
@@ -207,6 +207,10 @@ ipcMain.on('win:close', () => win?.close());
 ipcMain.handle('win:state', () => ({ maximized: !!win?.isMaximized(), focused: !!win?.isFocused() }));
 ipcMain.on('attention', () => {
   if (win && !win.isFocused()) win.flashFrame(true);
+});
+ipcMain.handle('clipboard:read', () => clipboard.readText());
+ipcMain.handle('clipboard:write', (_e, text: unknown) => {
+  if (typeof text === 'string') clipboard.writeText(text);
 });
 ipcMain.on('open-external', (_e, url: string) => {
   if (/^https?:\/\//.test(url)) shell.openExternal(url);

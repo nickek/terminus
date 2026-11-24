@@ -73,18 +73,27 @@ log(`Electron ${version} verified (sha256 ${expected.slice(0, 12)}…)`);
 
 const versionFile = path.join(target, 'electron-version.txt');
 const installed = fs.existsSync(versionFile) ? fs.readFileSync(versionFile, 'utf8').trim() : '';
-const exe = path.join(target, 'Terminus.exe');
+// Not "Terminus.exe": Discord matches running exe names against its game list, and a game
+// called Terminus would show up as your activity.
+const EXE_NAME = 'TerminusApp.exe';
+const LEGACY_EXE_NAMES = ['Terminus.exe'];
+const exe = path.join(target, EXE_NAME);
+const hasLegacyExe = LEGACY_EXE_NAMES.some((n) => fs.existsSync(path.join(target, n)));
 
-/** Count running Terminus.exe processes. Calls tasklist.exe directly (no cmd.exe), so the
+/** Count running Terminus processes (current and legacy exe names). Calls tasklist.exe directly (no cmd.exe), so the
  *  filter's quotes survive the WSL → Windows hand-off. */
 function runningCount() {
   try {
-    const out = execFileSync('tasklist.exe', ['/FI', 'IMAGENAME eq Terminus.exe', '/NH', '/FO', 'CSV'], {
-      cwd: '/mnt/c',
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return out.split('\n').filter((l) => /^"Terminus\.exe"/i.test(l.trim())).length;
+    let n = 0;
+    for (const name of [EXE_NAME, ...LEGACY_EXE_NAMES]) {
+      const out = execFileSync('tasklist.exe', ['/FI', `IMAGENAME eq ${name}`, '/NH', '/FO', 'CSV'], {
+        cwd: '/mnt/c',
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      n += out.split('\n').filter((l) => l.trim().toLowerCase().startsWith(`"${name.toLowerCase()}"`)).length;
+    }
+    return n;
   } catch (e) {
     log(`warning: couldn't check whether Terminus is running (${String(e.stderr || e.message).trim().split('\n')[0]})`);
     return 0;
@@ -96,8 +105,12 @@ if (runningCount() > 0) {
   process.exit(1);
 }
 
-if (installed !== version) {
-  log(installed ? `Updating runtime ${installed} → ${version}` : `Installing to ${toWin(target)}`);
+if (installed !== version || hasLegacyExe || !fs.existsSync(exe)) {
+  log(
+    !installed ? `Installing to ${toWin(target)}`
+    : installed !== version ? `Updating runtime ${installed} → ${version}`
+    : `Reinstalling runtime as ${EXE_NAME}`,
+  );
   // Only remove what a previous install created (the runtime), never anything else.
   if (fs.existsSync(versionFile)) fs.rmSync(target, { recursive: true, force: true });
   fs.mkdirSync(target, { recursive: true });
@@ -122,7 +135,7 @@ if (installed !== version) {
       '--set-version-string', 'ProductName', 'Terminus',
       '--set-version-string', 'FileDescription', 'Terminus',
       '--set-version-string', 'CompanyName', 'Terminus',
-      '--set-version-string', 'OriginalFilename', 'Terminus.exe',
+      '--set-version-string', 'OriginalFilename', EXE_NAME,
     ]);
   } catch (e) {
     log(`warning: could not set exe icon (${e.message.split('\n')[0]})`);

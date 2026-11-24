@@ -46,7 +46,7 @@ Everything Terminus remembers lives in `~/.terminus/` (override with `TERMINUS_H
 
 `config.json` is plain, documented JSON. Edit it by hand and open windows update immediately. Shells always load your own dotfiles, so a new machine gets its own prompt, aliases and PATH with nothing copied.
 
-Shortcuts: `Ctrl+Shift+T` new session, `Ctrl+Shift+1..6` switch views, `Ctrl+Shift+B` collapse/expand the sidebar, `Ctrl+Shift+C/V` copy/paste in a terminal, `Ctrl + mouse wheel` zoom a terminal (per pane), `Ctrl+0` reset its zoom.
+Shortcuts: `Ctrl+Shift+T` new session, `Ctrl+Shift+1..6` switch views, `Ctrl+Shift+B` collapse/expand the sidebar, `Ctrl+Shift+C/V` copy/paste in a terminal (plain `Ctrl+C` also copies when text is selected; with nothing selected it interrupts as usual), `Ctrl + mouse wheel` zoom a terminal (per pane), `Ctrl+0` reset its zoom.
 
 ## Native Windows window (recommended on WSL)
 
@@ -57,7 +57,7 @@ npm run win:install   # build, then install/update %LOCALAPPDATA%\Terminus + Sta
 npm run win           # same, then launch it
 ```
 
-The installer downloads the official Electron Windows build (checked against Electron's published SHA-256 sums), sets the Terminus icon with rcedit, and copies in the app. On start, `Terminus.exe` attaches to the core in WSL if it's running, or starts it with `wsl.exe -d <distro>`, then connects over `localhost`. Folder pickers show Windows dialogs and convert paths (`\\wsl.localhost\<distro>\…` → `/…`, `C:\…` → `/mnt/c/…`). Re-run `npm run win:install` after changing the code. Uninstall by deleting `%LOCALAPPDATA%\Terminus` and the Start Menu shortcut.
+The installer downloads the official Electron Windows build (checked against Electron's published SHA-256 sums), sets the Terminus icon with rcedit, and copies in the app. On start, `TerminusApp.exe` (not `Terminus.exe`, which Discord mistakes for a game) attaches to the core in WSL if it's running, or starts it with `wsl.exe -d <distro>`, then connects over `localhost`. Folder pickers show Windows dialogs and convert paths (`\\wsl.localhost\<distro>\…` → `/…`, `C:\…` → `/mnt/c/…`). Re-run `npm run win:install` after changing the code. Uninstall by deleting `%LOCALAPPDATA%\Terminus` and the Start Menu shortcut.
 
 ## Architecture
 

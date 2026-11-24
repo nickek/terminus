@@ -5,6 +5,11 @@ contextBridge.exposeInMainWorld('terminus', {
   pickDirectory: (defaultPath?: string) => ipcRenderer.invoke('pick-directory', defaultPath),
   attention: () => ipcRenderer.send('attention'),
   openExternal: (url: string) => ipcRenderer.send('open-external', url),
+  // Electron's own clipboard (via main): navigator.clipboard can refuse in a sandboxed renderer.
+  clipboard: {
+    readText: (): Promise<string> => ipcRenderer.invoke('clipboard:read'),
+    writeText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
+  },
   window: {
     minimize: () => ipcRenderer.send('win:minimize'),
     toggleMaximize: () => ipcRenderer.send('win:toggle-maximize'),
